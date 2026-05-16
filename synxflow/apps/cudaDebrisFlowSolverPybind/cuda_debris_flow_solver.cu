@@ -67,6 +67,8 @@
 #include "cuda_device_query.h"
 //The header file for time controllinh
 #include "cuda_adaptive_time_control.h"
+//The header file for Green-Ampt infiltration
+#include "cuda_infiltration.h"
 #include <thrust/device_ptr.h>
 #include <thrust/reduce.h>
 #include <pybind11/pybind11.h>
@@ -176,6 +178,12 @@ int run(const char* work_dir){
   //precipitation
   fvScalarFieldOnCell precipitation_host(fvMeshQueries(mesh), completeFieldReader("input/field/", "precipitation"));
 
+  //Green-Ampt infiltration fields
+  fvScalarFieldOnCell hydraulic_conductivity_host(fvMeshQueries(mesh), completeFieldReader("input/field/", "hydraulic_conductivity"));
+  fvScalarFieldOnCell capillary_head_host(fvMeshQueries(mesh), completeFieldReader("input/field/", "capillary_head"));
+  fvScalarFieldOnCell water_content_diff_host(fvMeshQueries(mesh), completeFieldReader("input/field/", "water_content_diff"));
+  fvScalarFieldOnCell cumulative_depth_host(fvMeshQueries(mesh), completeFieldReader("input/field/", "cumulative_depth"));
+
   std::cout << "Read in field successfully" << std::endl;
 
   //h, z, hU, C
@@ -191,6 +199,12 @@ int run(const char* work_dir){
 
   //precipitation
   cuFvMappedField<Scalar, on_cell> precipitation(precipitation_host, mesh_ptr_dev);
+
+  //Green-Ampt infiltration fields
+  cuFvMappedField<Scalar, on_cell> hydraulic_conductivity(hydraulic_conductivity_host, mesh_ptr_dev);
+  cuFvMappedField<Scalar, on_cell> capillary_head(capillary_head_host, mesh_ptr_dev);
+  cuFvMappedField<Scalar, on_cell> water_content_diff(water_content_diff_host, mesh_ptr_dev);
+  cuFvMappedField<Scalar, on_cell> cumulative_depth(cumulative_depth_host, mesh_ptr_dev);
 
   //new topography after collapse
   cuFvMappedField<Scalar, on_cell> z_new(h, partial);
@@ -416,6 +430,9 @@ int run(const char* work_dir){
     precipitation.update_data_values();
     fv::cuEulerIntegrator(h, precipitation, time_controller.dt(), time_controller.current());
 
+    //Green-Ampt infiltration (removes water from h, updates cumulative_depth)
+    fv::cuInfiltrationGreenAmpt(h, hydraulic_conductivity, capillary_head, water_content_diff, cumulative_depth, time_controller.dt());
+
     //calculate the concentration, update the boundary, and then calculate hC again, so that concentration boundary condition can be applied
     fv::cuBinary(hC, h, C, divide_scalar);
     C.update_time(time_controller.current(), time_controller.dt());
@@ -462,6 +479,8 @@ int run(const char* work_dir){
       raster_writer.write(hUx, "hUx", t_out);
       raster_writer.write(hUy, "hUy", t_out);
       raster_writer.write(C, "C", t_out);
+      raster_writer.write(cumulative_depth, "cumulative_depth", t_out);
+      raster_writer.write(erodible_depth, "erodible_depth", t_out);
       t_out += dt_out;
     }
 
@@ -471,6 +490,8 @@ int run(const char* work_dir){
       cuBackupWriter(z, "z_backup_", backup_time);
       cuBackupWriter(hU, "hU_backup_", backup_time);
       cuBackupWriter(C, "C_backup_", backup_time);
+      cuBackupWriter(cumulative_depth, "cumulative_depth_backup_", backup_time);
+      cuBackupWriter(erodible_depth, "erodible_depth_backup_", backup_time);
       backup_time += backup_interval;
     }
 
