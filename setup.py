@@ -98,11 +98,11 @@ setup(
         'Programming Language :: C++',
         'Intended Audience :: Science/Research'
     ],
-    install_requires=['numpy',
-                      'scipy',
-                      'matplotlib',
-                      'imageio',
-                      'pandas',
-                      'rasterio',
-                      'pyshp',
-                      'fiona'])
+    install_requires=["numpy>=1.26,<2.0",
+                      "scipy>=1.11,<1.12",
+                      "matplotlib>=3.8,<3.9",
+                      "imageio>=2.33,<2.34",
+                      "pandas>=2.1,<2.2",
+                      "rasterio>=1.3,<1.4",
+                      "pyshp>=2.3,<2.4",
+                      "fiona>=1.9,<2.0"])
