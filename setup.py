@@ -105,13 +105,4 @@ setup(
                       'pandas',
                       'rasterio',
                       'pyshp',
-                      'fiona'],
-    package_data={'synxflow.IO': ['sample/flood/DEM.gz',
-                            'sample/flood/landcover.gz',
-                            'sample/flood/rain_mask.gz',
-                            'sample/flood/rain_source.csv',
-                            'sample/debris/DEM.txt',
-                            'sample/debris/Erosion.txt',
-                            'sample/landslide/dem.gz',
-                            'sample/landslide/depth.gz'],},
-)
+                      'fiona'])
