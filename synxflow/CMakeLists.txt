@@ -7,7 +7,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 IF(UNIX)
-    set(PLATFORM_CXX_FLAGS "-pthread -std=c++11 -fPIC -O3")
+    set(PLATFORM_CXX_FLAGS "-pthread -std=c++17 -fPIC -O3")
     #set(CUDA_SEPARABLE_COMPILATION ON)
     set(CUDA_NVCC_FLAGS  -arch=sm_86;--expt-extended-lambda)
 ENDIF(UNIX)
